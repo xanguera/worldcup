@@ -1,0 +1,6 @@
+# Internal planning docs — kept local, not part of the public game repo
+plan/
+
+# OS / editor cruft
+.DS_Store
+*.swp
