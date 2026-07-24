@@ -32,24 +32,40 @@ simply the repo name, which is why the repo must be named `worldcup`.
 3. Wait ~1 minute; then open https://www.xavieranguera.com/worldcup.
 
 ## How to play
+- **⭐ Pick your team** (optional) on the Home screen — it's starred everywhere, gets a tag in
+  live matches, extra confetti on its goals, and a special message if it wins the cup.
 - **🎲 Draw the Groups & Start** — 48 teams are drawn into 12 groups (seeded pots, like the
   real draw; the three hosts USA/Mexico/Canada are seeded).
 - **Group stage** — each fixture has **▶ Play** (live) or **Quick** (instant). Or use
   **⚡ Simulate all groups**. Top 2 of every group plus the **8 best third-placed** teams
   advance (32 teams).
 - **Knockout** — a full bracket: Round of 32 → R16 → Quarter-finals → Semi-finals → Final,
-  plus a 3rd-place playoff. Draws are decided by a **penalty shootout**. Play each tie or
-  simulate the round / the whole bracket.
+  plus a 3rd-place playoff. A level tie goes to **extra time**, then a **penalty shootout**.
+  Play each tie or simulate the round / the whole bracket.
 - **🏆 Champion** — trophy, confetti, and the medal table.
 
+## Features
+- **Team editor** — the **Teams** tab lists every team; tap one to see its squad and three
+  quality sliders (**Attack / Midfield / Defense**) that combine into an **Overall** rating.
+  Move the sliders to make a team stronger or weaker — it really changes their chances (a
+  maxed-out minnow beats a nerfed favourite ~90% of the time). Edits persist.
+- **Live commentary** during Play matches, with occasional colour between the goals.
+- **Stats tab** — Golden Boot top-scorer race, Golden Glove, biggest win, most goals, goals
+  per match, and per-team stats on each team's page.
+- **Auto save & resume** — your tournament (and any team edits) are saved to the browser
+  automatically; close the tab and pick up right where you left off.
+
 ## How results are decided
-Each team has a strength rating derived from FIFA rankings. A match's goals are simulated
-minute-by-minute, weighted by the two ratings — **but deliberately compressed** so favourites
-only win ~58% of the time. Underdogs win often, so every team has a real shot (across many
-simulations, 40+ different teams end up champions).
+Every team has **Attack / Midfield / Defense** ratings (derived from FIFA rankings plus a
+little style — Brazil attack-heavy, Italy defense-heavy, etc.). Each match's goals are
+simulated minute-by-minute: a team's chances come from **its attack vs the opponent's
+defense**, weighted but **deliberately compressed** so favourites win only ~60% of the time.
+Underdogs win often, so every team has a real shot (across many simulations, 40+ different
+teams end up champions).
 
 ## Notes
 - Player names shown as scorers are well-known real players used for flavour; they're
   illustrative, not official 2026 squad lists.
-- Tune the feel by editing two constants near the top of the script in `index.html`:
-  `DAMP` (higher = favourites win more) and `BASELINE`.
+- Tune the overall feel by editing constants near the top of the script in `index.html`:
+  `GOAL_BASE`/`KGOAL` (how much ratings matter), and the `STYLE` map (per-team attack/defense
+  tilt). Kids can adjust individual teams live via the sliders — no code needed.
