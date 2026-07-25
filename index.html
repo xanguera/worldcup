@@ -4,6 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>World Cup 2026 Simulator ⚽</title>
+<meta name="description" content="Simulate the 48-team FIFA World Cup 2026 — group draw, knockout bracket, live matches. English / Português.">
+
 <style>
   :root{
     --bg1:#0b2a4a; --bg3:#08324f;
@@ -183,6 +185,8 @@
   .seg{display:flex;background:rgba(0,0,0,.3);border:1px solid var(--line);border-radius:10px;overflow:hidden}
   .seg button{border:none;background:transparent;color:var(--muted);font-weight:800;padding:8px 12px;font-size:.82rem}
   .seg button.on{background:var(--gold);color:#06202f}
+  .langsw{align-self:center}
+  .langsw button{padding:8px 11px;font-size:.8rem}
 
   /* Champion */
   .champ{text-align:center;padding:36px 20px}
@@ -210,9 +214,12 @@
   <header class="top">
     <div class="logo">
       <div class="ball">⚽</div>
-      <div><div class="sub">FIFA</div><h1>World Cup 2026 <span style="color:var(--gold)">Simulator</span></h1></div>
+      <div><div class="sub">FIFA</div><h1 id="brandTitle">World Cup 2026 <span style="color:var(--gold)">Simulator</span></h1></div>
     </div>
     <div class="spacer"></div>
+    <div class="seg langsw" id="langsw">
+      <button data-lang="en" class="on">EN</button><button data-lang="pt">PT</button>
+    </div>
     <nav class="tabs" id="tabs">
       <button class="tab active" data-screen="home">Home</button>
       <button class="tab" data-screen="teams">Teams</button>
@@ -321,6 +328,140 @@ function hashStr(s){let h=5381;for(let i=0;i<s.length;i++)h=((h*33)^s.charCodeAt
 function noise(name,k){return (hashStr(name+"#"+k)%5)-2;}       // -2..+2 deterministic
 
 /* ---------------------------------------------------------------------------
+   2b. LOCALIZATION  (English + European Portuguese)
+   Internal team identity stays English everywhere; only the DISPLAY is localized.
+--------------------------------------------------------------------------- */
+const TEAM_PT = {
+  "Argentina":"Argentina","France":"França","Spain":"Espanha","England":"Inglaterra",
+  "Brazil":"Brasil","Portugal":"Portugal","Netherlands":"Países Baixos","Belgium":"Bélgica",
+  "Germany":"Alemanha","Italy":"Itália","Croatia":"Croácia","Uruguay":"Uruguai",
+  "Colombia":"Colômbia","Morocco":"Marrocos","USA":"EUA","Japan":"Japão","Senegal":"Senegal",
+  "Switzerland":"Suíça","Mexico":"México","Denmark":"Dinamarca","Korea Rep.":"Coreia do Sul",
+  "Iran":"Irão","Austria":"Áustria","Ecuador":"Equador","Ukraine":"Ucrânia","Australia":"Austrália",
+  "Canada":"Canadá","Nigeria":"Nigéria","Poland":"Polónia","Serbia":"Sérvia","Egypt":"Egito",
+  "Norway":"Noruega","Turkey":"Turquia","Algeria":"Argélia","Ivory Coast":"Costa do Marfim",
+  "Peru":"Peru","Paraguay":"Paraguai","Cameroon":"Camarões","Ghana":"Gana","Tunisia":"Tunísia",
+  "Saudi Arabia":"Arábia Saudita","Qatar":"Catar","Costa Rica":"Costa Rica","Iraq":"Iraque",
+  "Jamaica":"Jamaica","Uzbekistan":"Uzbequistão","Panama":"Panamá","New Zealand":"Nova Zelândia",
+};
+const I18N = {
+  en:{
+    title:"World Cup 2026 Simulator ⚽", brand_pre:"World Cup 2026", brand_hi:"Simulator",
+    tab_home:"Home", tab_teams:"Teams", tab_groups:"Groups", tab_knockout:"Knockout", tab_stats:"Stats",
+    home_big:"The Road to the Cup ⚽🏆",
+    home_p:"Simulate the whole 48-team World Cup 2026 — draw the groups, watch the goals fly in live, and follow your favourite team all the way to the final. Every team has a real chance!",
+    hosts:"Hosts 2026", your_team:"⭐ Your team:", none:"— none —",
+    continue_tourn:"▶ Continue tournament", new_tourn:"🎲 New tournament",
+    draw_start:"🎲 Draw the Groups &amp; Start", view_edit:"👕 View &amp; edit teams",
+    resume_note:"You have a tournament in progress — it was saved automatically.",
+    fact_teams:"Teams", fact_groups:"Groups", fact_matches:"Matches", fact_champ:"Champion",
+    confirm_new:"Start a new tournament? Current progress will be lost (your team edits are kept).",
+    teams_title:"Teams", search_ph:"Search team…",
+    teams_sub:"Tap a team to see its squad and tweak its qualities. Stronger qualities = better chances!",
+    back_teams:"← Teams", fav_yes:"⭐ Your team", fav_set:"☆ Set as my team", reset_ratings:"↺ Reset ratings",
+    detail_sub:"World Cup 2026 · squad &amp; ratings", overall:"OVERALL",
+    attack:"Attack ⚔️", midfield:"Midfield 🎯", defense:"Defense 🛡️",
+    slider_note:"Move the sliders to make {team} stronger or weaker. Changes affect matches from now on.",
+    squad:"👕 Squad", tourn_stats:"📊 Tournament stats",
+    st_played:"Played", st_wdl:"W-D-L", st_goals_fa:"Goals for:against", st_top:"Top scorer",
+    group_stage:"Group Stage", redraw:"🎲 Re-draw", sim_all:"⚡ Simulate all groups", to_knockout:"Go to Knockout →",
+    leg_1:"1st — qualifies", leg_2:"2nd — qualifies", leg_3:"3rd — maybe (best 8)",
+    group_x:"Group {L}", th_team:"Team", play:"▶ Play", quick:"Quick", vs:"vs",
+    confirm_redraw:"Re-draw all groups? Current results will be lost.",
+    thirds_title:"🥉 Third-placed teams — best 8 advance",
+    th_pos:"#", th_grp:"Grp", th_status:"Status", qualified:"✅ Qualified", eliminated:"❌ Out",
+    knockout_stage:"Knockout Stage", sim_round:"⚡ Simulate current round", sim_final:"🏆 Simulate to Final",
+    third_place:"3rd Place", third_playoff:"3rd Place Playoff", tbd:"To be decided…",
+    after_pens:"after penalties", after_et:"after extra time",
+    champions_2026:"World Champions 2026", your_champ:"⭐ YOUR TEAM ARE WORLD CHAMPIONS! ⭐",
+    runners_up:"🥈 Runners-up:", third_lbl:"🥉 Third:", play_again:"🔁 New tournament", see_stats:"📊 See stats",
+    stats_title:"Tournament Stats", st_matches:"Matches played", st_total_goals:"Total goals",
+    st_gpm:"Goals / match", st_biggest:"Biggest win", st_most:"Most goals", st_glove:"Golden Glove",
+    glove_val:"{name} ({ga} in {p})", boot_title:"👑 Golden Boot race — top scorers",
+    th_player:"Player", th_goals:"Goals", no_goals:"No goals yet — play some matches!",
+    ovr:"OVR", kickoff:"Kick-off!", kickoff_feed:"🟢 Kick-off! {h} vs {a}",
+    slow:"Slow", normal:"Normal", fast:"Fast", skip:"⏭ Skip to result", cont:"✓ Continue",
+    ft:"FT", aet_s:"AET", pens_s:"PENS",
+    et_break:"— {gh}-{ga} after 90' — Extra time! —", et_comm:"Level after 90 minutes — we go to extra time!",
+    pens_head:"— Penalty shootout! —", pk_scored:"⚽ Scored", pk_missed:"❌ Missed",
+    sudden:"sudden death", kick:"kick {i}", pens_win:"{w} win {sh}-{sa} on penalties! 🎉",
+    pens_comm:"{w} win it on penalties! 🎉", fav_tag:"⭐ Your team",
+    toast_draw:"🎲 The draw is complete — 12 groups set!", toast_groups_done:"⚡ Group stage complete!",
+    groupCols:["P","W","D","L","GF:GA","GD","Pts"],
+    rounds:{32:"Round of 32",16:"Round of 16",8:"Quarter-finals",4:"Semi-finals",2:"Final"},
+    commGoal:[
+      "GOAL! {s} smashes it home for {t}! 🚀","It's in! {s} scores for {t}! 🎉",
+      "What a finish from {s}! {t} go wild!","{s} makes no mistake — goal for {t}!",
+      "Brilliant strike by {s}! {t} are buzzing!","The net bulges! {s} scores for {t}!"],
+    commFiller:["End to end stuff here!","The crowd is on its feet!","Great tempo in this match.",
+      "So close — off the post!","The keeper stands tall!","A chance goes begging!",
+      "What an atmosphere in the stadium!","Both teams pushing forward!"],
+  },
+  pt:{
+    title:"Simulador do Mundial 2026 ⚽", brand_pre:"Mundial 2026", brand_hi:"Simulador",
+    tab_home:"Início", tab_teams:"Seleções", tab_groups:"Grupos", tab_knockout:"Eliminatórias", tab_stats:"Estatísticas",
+    home_big:"A Caminho da Taça ⚽🏆",
+    home_p:"Simula todo o Mundial 2026 com 48 seleções — sorteia os grupos, vê os golos ao vivo e segue a tua seleção favorita até à final. Todas as seleções têm hipóteses a sério!",
+    hosts:"Anfitriões 2026", your_team:"⭐ A tua seleção:", none:"— nenhuma —",
+    continue_tourn:"▶ Continuar torneio", new_tourn:"🎲 Novo torneio",
+    draw_start:"🎲 Sortear os Grupos e Começar", view_edit:"👕 Ver e editar seleções",
+    resume_note:"Tens um torneio em curso — foi guardado automaticamente.",
+    fact_teams:"Seleções", fact_groups:"Grupos", fact_matches:"Jogos", fact_champ:"Campeão",
+    confirm_new:"Começar um novo torneio? O progresso atual será perdido (as tuas edições de seleções são mantidas).",
+    teams_title:"Seleções", search_ph:"Procurar seleção…",
+    teams_sub:"Toca numa seleção para veres o plantel e ajustares as suas qualidades. Melhores qualidades = melhores hipóteses!",
+    back_teams:"← Seleções", fav_yes:"⭐ A tua seleção", fav_set:"☆ Definir como a minha", reset_ratings:"↺ Repor valores",
+    detail_sub:"Mundial 2026 · plantel e valores", overall:"GERAL",
+    attack:"Ataque ⚔️", midfield:"Meio-campo 🎯", defense:"Defesa 🛡️",
+    slider_note:"Move os cursores para tornar {team} mais forte ou mais fraca. As alterações afetam os jogos a partir de agora.",
+    squad:"👕 Plantel", tourn_stats:"📊 Estatísticas do torneio",
+    st_played:"Jogos", st_wdl:"V-E-D", st_goals_fa:"Golos marc.:sofr.", st_top:"Melhor marcador",
+    group_stage:"Fase de Grupos", redraw:"🎲 Novo sorteio", sim_all:"⚡ Simular todos os grupos", to_knockout:"Ir para as Eliminatórias →",
+    leg_1:"1.º — apura-se", leg_2:"2.º — apura-se", leg_3:"3.º — talvez (8 melhores)",
+    group_x:"Grupo {L}", th_team:"Seleção", play:"▶ Jogar", quick:"Rápido", vs:"vs",
+    confirm_redraw:"Refazer o sorteio de todos os grupos? Os resultados atuais serão perdidos.",
+    thirds_title:"🥉 Terceiros classificados — os 8 melhores apuram-se",
+    th_pos:"#", th_grp:"Grp", th_status:"Estado", qualified:"✅ Apurado", eliminated:"❌ Fora",
+    knockout_stage:"Fase Eliminatória", sim_round:"⚡ Simular ronda atual", sim_final:"🏆 Simular até à Final",
+    third_place:"3.º Lugar", third_playoff:"Disputa do 3.º Lugar", tbd:"A definir…",
+    after_pens:"após penáltis", after_et:"após prolongamento",
+    champions_2026:"Campeões do Mundo 2026", your_champ:"⭐ A TUA SELEÇÃO É CAMPEÃ DO MUNDO! ⭐",
+    runners_up:"🥈 Vice-campeões:", third_lbl:"🥉 Terceiro:", play_again:"🔁 Novo torneio", see_stats:"📊 Ver estatísticas",
+    stats_title:"Estatísticas do Torneio", st_matches:"Jogos disputados", st_total_goals:"Total de golos",
+    st_gpm:"Golos / jogo", st_biggest:"Maior goleada", st_most:"Mais golos", st_glove:"Luva de Ouro",
+    glove_val:"{name} ({ga} em {p})", boot_title:"👑 Corrida à Bota de Ouro — melhores marcadores",
+    th_player:"Jogador", th_goals:"Golos", no_goals:"Ainda sem golos — joga alguns jogos!",
+    ovr:"GER", kickoff:"Pontapé de saída!", kickoff_feed:"🟢 Pontapé de saída! {h} vs {a}",
+    slow:"Lento", normal:"Normal", fast:"Rápido", skip:"⏭ Saltar para o resultado", cont:"✓ Continuar",
+    ft:"FIM", aet_s:"A.P.", pens_s:"PEN",
+    et_break:"— {gh}-{ga} após 90' — Prolongamento! —", et_comm:"Empate após 90 minutos — vamos a prolongamento!",
+    pens_head:"— Marcação de penáltis! —", pk_scored:"⚽ Marcou", pk_missed:"❌ Falhou",
+    sudden:"morte súbita", kick:"penálti {i}", pens_win:"{w} vence {sh}-{sa} nos penáltis! 🎉",
+    pens_comm:"{w} vence nos penáltis! 🎉", fav_tag:"⭐ A tua seleção",
+    toast_draw:"🎲 Sorteio concluído — 12 grupos definidos!", toast_groups_done:"⚡ Fase de grupos concluída!",
+    groupCols:["J","V","E","D","GM:GS","DG","P"],
+    rounds:{32:"16 avos de final",16:"Oitavos de final",8:"Quartos de final",4:"Meias-finais",2:"Final"},
+    commGoal:[
+      "GOLO! {s} manda-a para dentro pela {t}! 🚀","Está lá dentro! {s} marca pela {t}! 🎉",
+      "Que finalização de {s}! A {t} festeja!","{s} não perdoa — golo da {t}!",
+      "Grande remate de {s}! A {t} está ao rubro!","A bola dança na baliza! {s} marca pela {t}!"],
+    commFiller:["Jogo de baliza a baliza!","Os adeptos estão de pé!","Grande ritmo neste jogo.",
+      "Quase! Ao poste!","O guarda-redes segura!","Uma oportunidade desperdiçada!",
+      "Que ambiente no estádio!","Ambas as seleções à procura do golo!"],
+  }
+};
+function L(){ return I18N[state.lang]||I18N.en; }
+function t(key,vars){
+  let s = (L()[key]!=null) ? L()[key] : I18N.en[key];
+  if(s==null) return key;
+  if(vars) for(const p in vars) s = s.split("{"+p+"}").join(vars[p]);
+  return s;
+}
+function teamName(name){ return state.lang==="pt" ? (TEAM_PT[name]||name) : name; }
+function label(name){ return favMark(name)+teamName(name); }
+function setLang(lang){ state.lang=lang; save(); render(); }
+
+/* ---------------------------------------------------------------------------
    3. QUALITIES  (attack / midfield / defense -> overall)
 --------------------------------------------------------------------------- */
 const QW = {a:0.42, m:0.23, d:0.35};                            // overall weights
@@ -347,7 +488,7 @@ let state = null;
 function freshStats(){return {scorers:{},teams:{},matches:0,goals:0,biggestWin:null,mostGoals:null};}
 function freshQualities(){const o={};TEAMS.forEach(t=>o[t.name]=baseQualities(t));return o;}
 function newState(){
-  return {screen:"home", groups:null, knockout:null, soundOn:true, speed:"fast",
+  return {screen:"home", groups:null, knockout:null, soundOn:true, speed:"fast", lang:"en",
           favTeam:"", viewTeam:"", qualities:freshQualities(), stats:freshStats()};
 }
 function save(){ try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){} }
@@ -358,6 +499,7 @@ function load(){
     // heal: ensure every team has qualities (data may have changed since save)
     TEAMS.forEach(t=>{ if(!s.qualities[t.name]) s.qualities[t.name]=baseQualities(t); });
     if(!("favTeam" in s)) s.favTeam="";
+    if(s.lang!=="pt" && s.lang!=="en") s.lang="en";
     return s;
   }catch(e){ return null; }
 }
@@ -508,8 +650,8 @@ function buildKnockout(){
   return {rounds:[r32], thirdPlace:null, champion:null};
 }
 function roundName(idx,total){
-  const names={32:"Round of 32",16:"Round of 16",8:"Quarter-finals",4:"Semi-finals",2:"Final"};
-  return names[Math.pow(2,total-idx)]||`Round ${idx+1}`;
+  const teams=Math.pow(2,total-idx);
+  return (L().rounds&&L().rounds[teams]) || I18N.en.rounds[teams] || `Round ${idx+1}`;
 }
 function recordKnockout(tie,result){
   tie.played=true; tie.result=result;
@@ -542,7 +684,7 @@ function ensureKnockout(){ if(!state.knockout && state.groups && allGroupsDone()
 function favMark(name){ return state.favTeam===name ? "⭐ " : ""; }
 
 function render(){
-  updateTabs();
+  updateChrome();
   const s=state.screen;
   if(s==="home") renderHome();
   else if(s==="teams") renderTeams();
@@ -552,79 +694,83 @@ function render(){
   else if(s==="stats") renderStats();
   save();
 }
-function updateTabs(){
+function updateChrome(){
+  document.title=t("title");
+  $("#brandTitle").innerHTML=`${t("brand_pre")} <span style="color:var(--gold)">${t("brand_hi")}</span>`;
+  const labels={home:t("tab_home"),teams:t("tab_teams"),groups:t("tab_groups"),knockout:t("tab_knockout"),stats:t("tab_stats")};
   const active = state.screen==="teamDetail" ? "teams" : state.screen;
-  $$("#tabs .tab").forEach(b=>b.classList.toggle("active", b.dataset.screen===active));
+  $$("#tabs .tab").forEach(b=>{ b.textContent=labels[b.dataset.screen]; b.classList.toggle("active", b.dataset.screen===active); });
   $("#tab-groups").disabled=!state.groups;
   $("#tab-knockout").disabled=!state.knockout;
   $("#tab-stats").disabled=!(state.stats && state.stats.matches>0);
+  $$("#langsw button").forEach(b=>b.classList.toggle("on", b.dataset.lang===state.lang));
 }
 
 /* ----- Home ----- */
 function renderHome(){
-  const hostFlags=HOSTS.map(h=>`<img src="${flag(code(h))}" alt="${h}" title="${h}">`).join("");
+  const hostFlags=HOSTS.map(h=>`<img src="${flag(code(h))}" alt="${teamName(h)}" title="${teamName(h)}">`).join("");
   const inProgress = state.groups && !( state.knockout && state.knockout.champion );
-  const teamOpts = TEAMS.slice().sort((a,b)=>a.name.localeCompare(b.name))
-    .map(t=>`<option value="${t.name}" ${state.favTeam===t.name?"selected":""}>${t.name}</option>`).join("");
+  const teamOpts = TEAMS.slice().sort((a,b)=>teamName(a.name).localeCompare(teamName(b.name)))
+    .map(x=>`<option value="${x.name}" ${state.favTeam===x.name?"selected":""}>${teamName(x.name)}</option>`).join("");
   app().innerHTML=`
     <section class="card hero">
-      <div class="big">The Road to the Cup ⚽🏆</div>
-      <p>Simulate the whole 48-team World Cup 2026 — draw the groups, watch the goals fly in
-         live, and follow your favourite team all the way to the final. Every team has a real chance!</p>
-      <div class="hostrow">${hostFlags}<span style="color:var(--muted);font-weight:700;margin-left:6px">Hosts 2026</span></div>
+      <div class="big">${t("home_big")}</div>
+      <p>${t("home_p")}</p>
+      <div class="hostrow">${hostFlags}<span style="color:var(--muted);font-weight:700;margin-left:6px">${t("hosts")}</span></div>
 
       <div class="favpick">
-        <span style="font-weight:800">⭐ Your team:</span>
+        <span style="font-weight:800">${t("your_team")}</span>
         ${state.favTeam?`<img src="${flag(code(state.favTeam))}" alt="">`:""}
-        <select id="favSelect"><option value="">— none —</option>${teamOpts}</select>
+        <select id="favSelect"><option value="">${t("none")}</option>${teamOpts}</select>
       </div>
 
       <div class="cta">
         ${inProgress
-          ? `<button class="btn green" id="resumeBtn">▶ Continue tournament</button>
-             <button class="btn ghost" id="newBtn">🎲 New tournament</button>`
-          : `<button class="btn green" id="startBtn">🎲 Draw the Groups &amp; Start</button>`}
-        <button class="btn ghost" id="teamsBtn">👕 View &amp; edit teams</button>
+          ? `<button class="btn green" id="resumeBtn">${t("continue_tourn")}</button>
+             <button class="btn ghost" id="newBtn">${t("new_tourn")}</button>`
+          : `<button class="btn green" id="startBtn">${t("draw_start")}</button>`}
+        <button class="btn ghost" id="teamsBtn">${t("view_edit")}</button>
       </div>
-      ${inProgress?`<div class="resume-note">You have a tournament in progress — it was saved automatically.</div>`:""}
+      ${inProgress?`<div class="resume-note">${t("resume_note")}</div>`:""}
 
       <div class="facts">
-        <div><b>48</b>Teams</div><div><b>12</b>Groups</div><div><b>104</b>Matches</div><div><b>1</b>Champion</div>
+        <div><b>48</b>${t("fact_teams")}</div><div><b>12</b>${t("fact_groups")}</div><div><b>104</b>${t("fact_matches")}</div><div><b>1</b>${t("fact_champ")}</div>
       </div>
     </section>`;
   $("#favSelect").onchange=(e)=>{ state.favTeam=e.target.value; save(); renderHome(); };
   const b1=$("#startBtn"); if(b1) b1.onclick=startTournament;
   const b2=$("#resumeBtn"); if(b2) b2.onclick=()=>setScreen(state.knockout?"knockout":"groups");
-  const b3=$("#newBtn"); if(b3) b3.onclick=()=>{ if(confirm("Start a new tournament? Current progress will be lost (your team edits are kept).")) { startTournament(); } };
+  const b3=$("#newBtn"); if(b3) b3.onclick=()=>{ if(confirm(t("confirm_new"))) startTournament(); };
   $("#teamsBtn").onclick=()=>setScreen("teams");
 }
 
 function startTournament(){
   state.groups=drawGroups(); state.knockout=null; state.stats=freshStats();
   state.screen="groups"; render();
-  toast("🎲 The draw is complete — 12 groups set!");
+  toast(t("toast_draw"));
 }
 
 /* ----- Teams grid ----- */
 function renderTeams(){
   app().innerHTML=`
     <div class="toolbar">
-      <h2 style="font-size:1.2rem">Teams</h2>
+      <h2 style="font-size:1.2rem">${t("teams_title")}</h2>
       <div class="spacer"></div>
-      <input class="searchbar" id="teamSearch" placeholder="Search team…">
+      <input class="searchbar" id="teamSearch" placeholder="${t("search_ph")}">
     </div>
-    <p style="color:var(--muted);margin:-6px 0 14px">Tap a team to see its squad and tweak its qualities. Stronger qualities = better chances!</p>
+    <p style="color:var(--muted);margin:-6px 0 14px">${t("teams_sub")}</p>
     <div class="team-grid" id="teamGrid"></div>`;
   const grid=$("#teamGrid");
   const paint=(filter="")=>{
     grid.innerHTML="";
+    const f=filter.toLowerCase();
     TEAMS.slice().sort((a,b)=>overall(Q(b.name))-overall(Q(a.name)))
-      .filter(t=>t.name.toLowerCase().includes(filter.toLowerCase()))
-      .forEach(t=>{
-        const c=el("div","card tcard"); c.dataset.team=t.name;
-        c.innerHTML=`${state.favTeam===t.name?'<span class="star">⭐</span>':''}
-          <img src="${flag(t.code)}" alt=""><div class="nm">${t.name}</div>
-          <div class="ov">${overall(Q(t.name))}</div>`;
+      .filter(x=>x.name.toLowerCase().includes(f) || teamName(x.name).toLowerCase().includes(f))
+      .forEach(x=>{
+        const c=el("div","card tcard"); c.dataset.team=x.name;
+        c.innerHTML=`${state.favTeam===x.name?'<span class="star">⭐</span>':''}
+          <img src="${flag(x.code)}" alt=""><div class="nm">${teamName(x.name)}</div>
+          <div class="ov">${overall(Q(x.name))}</div>`;
         grid.appendChild(c);
       });
   };
@@ -634,7 +780,7 @@ function renderTeams(){
 
 /* ----- Team detail (roster + sliders + stats) ----- */
 function renderTeamDetail(){
-  const name=state.viewTeam, t=byName(name), q=Q(name);
+  const name=state.viewTeam, td=byName(name), q=Q(name);
   const isFav=state.favTeam===name;
   const st=state.stats.teams[name];
   const teamScorers=Object.entries(state.stats.scorers)
@@ -642,54 +788,54 @@ function renderTeamDetail(){
     .sort((a,b)=>b.goals-a.goals);
   app().innerHTML=`
     <div class="toolbar">
-      <button class="btn small ghost" id="backBtn">← Teams</button>
+      <button class="btn small ghost" id="backBtn">${t("back_teams")}</button>
       <div class="spacer"></div>
-      <button class="btn small ${isFav?'green':''}" id="favBtn">${isFav?'⭐ Your team':'☆ Set as my team'}</button>
-      <button class="btn small ghost" id="resetBtn">↺ Reset ratings</button>
+      <button class="btn small ${isFav?'green':''}" id="favBtn">${isFav?t("fav_yes"):t("fav_set")}</button>
+      <button class="btn small ghost" id="resetBtn">${t("reset_ratings")}</button>
     </div>
     <section class="card pad">
       <div class="detail-head">
-        <img src="${flag(t.code)}" alt="">
+        <img src="${flag(td.code)}" alt="">
         <div style="flex:1;min-width:180px">
-          <h2 style="font-size:1.6rem">${favMark(name)}${name}</h2>
-          <div style="color:var(--muted)">World Cup 2026 · squad &amp; ratings</div>
+          <h2 style="font-size:1.6rem">${favMark(name)}${teamName(name)}</h2>
+          <div style="color:var(--muted)">${t("detail_sub")}</div>
         </div>
         <div style="text-align:center">
           <div class="ov-big" id="ovBig">${overall(q)}</div>
-          <div style="color:var(--muted);font-weight:800;font-size:.75rem;letter-spacing:1px">OVERALL</div>
+          <div style="color:var(--muted);font-weight:800;font-size:.75rem;letter-spacing:1px">${t("overall")}</div>
         </div>
       </div>
 
       <div class="sliders">
-        ${sliderRow("attack","Attack ⚔️",q.attack)}
-        ${sliderRow("midfield","Midfield 🎯",q.midfield)}
-        ${sliderRow("defense","Defense 🛡️",q.defense)}
+        ${sliderRow("attack",t("attack"),q.attack)}
+        ${sliderRow("midfield",t("midfield"),q.midfield)}
+        ${sliderRow("defense",t("defense"),q.defense)}
       </div>
       <p style="color:var(--muted);font-size:.85rem;margin-top:12px">
-        Move the sliders to make ${name} stronger or weaker. Changes affect matches from now on.
+        ${t("slider_note",{team:teamName(name)})}
       </p>
     </section>
 
     <section class="card pad" style="margin-top:16px">
-      <h3 style="margin-bottom:12px">👕 Squad</h3>
+      <h3 style="margin-bottom:12px">${t("squad")}</h3>
       <div class="roster">
         ${players(name).map((p,i)=>`<span class="chip"><span class="no">${[10,9,7,8,4][i]||i+1}</span>${p}</span>`).join("")}
       </div>
     </section>
 
     ${st?`<section class="card pad" style="margin-top:16px">
-      <h3 style="margin-bottom:12px">📊 Tournament stats</h3>
+      <h3 style="margin-bottom:12px">${t("tourn_stats")}</h3>
       <div class="tiles">
-        <div class="card tile"><b>${st.P}</b><span>Played</span></div>
-        <div class="card tile"><b>${st.W}-${st.D}-${st.L}</b><span>W-D-L</span></div>
-        <div class="card tile"><b>${st.GF}:${st.GA}</b><span>Goals for:against</span></div>
-        <div class="card tile"><b>${teamScorers[0]?teamScorers[0].goals:0}</b><span>Top scorer</span>${teamScorers[0]?`<small>${teamScorers[0].name}</small>`:''}</div>
+        <div class="card tile"><b>${st.P}</b><span>${t("st_played")}</span></div>
+        <div class="card tile"><b>${st.W}-${st.D}-${st.L}</b><span>${t("st_wdl")}</span></div>
+        <div class="card tile"><b>${st.GF}:${st.GA}</b><span>${t("st_goals_fa")}</span></div>
+        <div class="card tile"><b>${teamScorers[0]?teamScorers[0].goals:0}</b><span>${t("st_top")}</span>${teamScorers[0]?`<small>${teamScorers[0].name}</small>`:''}</div>
       </div>
     </section>`:``}
   `;
   $("#backBtn").onclick=()=>setScreen("teams");
   $("#favBtn").onclick=()=>{ state.favTeam=isFav?"":name; save(); renderTeamDetail(); };
-  $("#resetBtn").onclick=()=>{ state.qualities[name]=baseQualities(t); save(); renderTeamDetail(); };
+  $("#resetBtn").onclick=()=>{ state.qualities[name]=baseQualities(td); save(); renderTeamDetail(); };
   ["attack","midfield","defense"].forEach(key=>{
     const inp=$("#sl-"+key);
     inp.oninput=()=>{
@@ -712,22 +858,22 @@ function renderGroups(){
   const done=allGroupsDone();
   app().innerHTML=`
     <div class="toolbar">
-      <h2 style="font-size:1.2rem">Group Stage</h2>
+      <h2 style="font-size:1.2rem">${t("group_stage")}</h2>
       <div class="spacer"></div>
-      <button class="btn small ghost" id="redraw">🎲 Re-draw</button>
-      <button class="btn small" id="simAll">⚡ Simulate all groups</button>
-      <button class="btn small green" id="toKO" ${done?"":"disabled"}>Go to Knockout →</button>
+      <button class="btn small ghost" id="redraw">${t("redraw")}</button>
+      <button class="btn small" id="simAll">${t("sim_all")}</button>
+      <button class="btn small green" id="toKO" ${done?"":"disabled"}>${t("to_knockout")}</button>
     </div>
     <div class="legend">
-      <span><i style="background:rgba(34,192,107,.7)"></i>1st — qualifies</span>
-      <span><i style="background:rgba(58,160,255,.7)"></i>2nd — qualifies</span>
-      <span><i style="background:rgba(255,210,74,.7)"></i>3rd — maybe (best 8)</span>
+      <span><i style="background:rgba(34,192,107,.7)"></i>${t("leg_1")}</span>
+      <span><i style="background:rgba(58,160,255,.7)"></i>${t("leg_2")}</span>
+      <span><i style="background:rgba(255,210,74,.7)"></i>${t("leg_3")}</span>
     </div>
     <div class="grid-groups" id="groups"></div>
     ${done?`<div class="card pad" style="margin-top:16px" id="thirdsBox"></div>`:""}`;
   const wrap=$("#groups");
   state.groups.forEach(g=>wrap.appendChild(groupCard(g)));
-  $("#redraw").onclick=()=>{ if(confirm("Re-draw all groups? Current results will be lost.")) startTournament(); };
+  $("#redraw").onclick=()=>{ if(confirm(t("confirm_redraw"))) startTournament(); };
   $("#simAll").onclick=simulateAllGroups;
   $("#toKO").onclick=()=>{ ensureKnockout(); setScreen("knockout"); };
   if(done) renderThirds($("#thirdsBox"));
@@ -738,13 +884,14 @@ function groupCard(g){
   const rows=s.map((r,i)=>{
     const cls=[i===0?"q1":i===1?"q2":i===2?"q3":"", state.favTeam===r.team?"fav":""].filter(Boolean).join(" ");
     return `<tr class="${cls}">
-      <td class="team" data-team="${r.team}"><img src="${flag(code(r.team))}" alt="">${favMark(r.team)}${r.team}</td>
+      <td class="team" data-team="${r.team}"><img src="${flag(code(r.team))}" alt="">${label(r.team)}</td>
       <td>${r.P}</td><td>${r.W}</td><td>${r.D}</td><td>${r.L}</td>
       <td>${r.GF}:${r.GA}</td><td>${r.GD>0?"+":""}${r.GD}</td><td class="pts">${r.Pts}</td></tr>`;
   }).join("");
+  const gc=L().groupCols;
   card.innerHTML=`
-    <h3><span class="badge">${g.letter}</span> Group ${g.letter}</h3>
-    <table><thead><tr><th style="text-align:left">Team</th><th>P</th><th>W</th><th>D</th><th>L</th><th>GF:GA</th><th>GD</th><th>Pts</th></tr></thead>
+    <h3><span class="badge">${g.letter}</span> ${t("group_x",{L:g.letter})}</h3>
+    <table><thead><tr><th style="text-align:left">${t("th_team")}</th><th>${gc[0]}</th><th>${gc[1]}</th><th>${gc[2]}</th><th>${gc[3]}</th><th>${gc[4]}</th><th>${gc[5]}</th><th>${gc[6]}</th></tr></thead>
     <tbody>${rows}</tbody></table><div class="fixtures"></div>`;
   const fxWrap=$(".fixtures",card);
   g.fixtures.forEach(fx=>fxWrap.appendChild(fixtureRow(g,fx)));
@@ -752,17 +899,17 @@ function groupCard(g){
 }
 function fixtureRow(group,fx){
   const row=el("div","fx");
-  const sc = fx.played ? `<div class="sc">${fx.result.gh} - ${fx.result.ga}</div>` : `<div class="sc todo">vs</div>`;
+  const sc = fx.played ? `<div class="sc">${fx.result.gh} - ${fx.result.ga}</div>` : `<div class="sc todo">${t("vs")}</div>`;
   row.innerHTML=`
-    <div class="side"><img src="${flag(code(fx.home))}"><span>${favMark(fx.home)}${fx.home}</span></div>
+    <div class="side"><img src="${flag(code(fx.home))}"><span>${label(fx.home)}</span></div>
     ${sc}
-    <div class="side b"><img src="${flag(code(fx.away))}"><span>${favMark(fx.away)}${fx.away}</span></div>
+    <div class="side b"><img src="${flag(code(fx.away))}"><span>${label(fx.away)}</span></div>
     <div class="actions"></div>`;
   const act=$(".actions",row);
   if(!fx.played){
-    const play=el("button","btn small green","▶ Play");
-    const quick=el("button","btn small ghost","Quick");
-    play.onclick=()=>playMatchOverlay({home:fx.home,away:fx.away,stage:`Group ${group.letter}`,knockout:false,
+    const play=el("button","btn small green",t("play"));
+    const quick=el("button","btn small ghost",t("quick"));
+    play.onclick=()=>playMatchOverlay({home:fx.home,away:fx.away,stage:t("group_x",{L:group.letter}),knockout:false,
       onFinish:(res,counted)=>{ fx.played=true; fx.result={gh:res.gh,ga:res.ga}; recordStats(fx.home,fx.away,res.gh,res.ga,counted); render(); }});
     quick.onclick=()=>{ const p=playFull(fx.home,fx.away,false); fx.played=true; fx.result={gh:p.result.gh,ga:p.result.ga}; recordStats(fx.home,fx.away,p.result.gh,p.result.ga,p.counted); render(); };
     act.append(play,quick);
@@ -775,19 +922,20 @@ function simulateAllGroups(){
   state.groups.forEach(g=>g.fixtures.forEach(fx=>{
     if(!fx.played){ const p=playFull(fx.home,fx.away,false); fx.played=true; fx.result={gh:p.result.gh,ga:p.result.ga}; recordStats(fx.home,fx.away,p.result.gh,p.result.ga,p.counted); }
   }));
-  toast("⚡ Group stage complete!"); render();
+  toast(t("toast_groups_done")); render();
 }
 function renderThirds(box){
   const thirds=[];
   state.groups.forEach(g=>{const s=computeStandings(g);thirds.push({...s[2],grp:g.letter});});
   const ranked=sortTable(thirds);
-  box.innerHTML=`<h3 style="margin-bottom:10px">🥉 Third-placed teams — best 8 advance</h3>
-    <table class="thirds"><thead><tr><th>#</th><th style="text-align:left">Team</th><th>Grp</th><th>Pts</th><th>GD</th><th>GF</th><th>Status</th></tr></thead>
+  const gc=L().groupCols;
+  box.innerHTML=`<h3 style="margin-bottom:10px">${t("thirds_title")}</h3>
+    <table class="thirds"><thead><tr><th>${t("th_pos")}</th><th style="text-align:left">${t("th_team")}</th><th>${t("th_grp")}</th><th>${gc[6]}</th><th>${gc[5]}</th><th>${state.lang==="pt"?"GM":"GF"}</th><th>${t("th_status")}</th></tr></thead>
     <tbody>${ranked.map((r,i)=>`<tr class="${i<8?"q3":""}">
       <td class="pos">${i+1}</td>
-      <td class="team" data-team="${r.team}"><img src="${flag(code(r.team))}">${favMark(r.team)}${r.team}</td>
+      <td class="team" data-team="${r.team}"><img src="${flag(code(r.team))}">${label(r.team)}</td>
       <td>${r.grp}</td><td class="pts">${r.Pts}</td><td>${r.GD>0?"+":""}${r.GD}</td><td>${r.GF}</td>
-      <td>${i<8?"✅ Qualified":"❌ Out"}</td></tr>`).join("")}</tbody></table>`;
+      <td>${i<8?t("qualified"):t("eliminated")}</td></tr>`).join("")}</tbody></table>`;
 }
 
 /* ----- Knockout ----- */
@@ -796,10 +944,10 @@ function renderKnockout(){
   const k=state.knockout, total=5;
   app().innerHTML=`
     <div class="toolbar">
-      <h2 style="font-size:1.2rem">Knockout Stage</h2>
+      <h2 style="font-size:1.2rem">${t("knockout_stage")}</h2>
       <div class="spacer"></div>
-      <button class="btn small" id="simRound">⚡ Simulate current round</button>
-      <button class="btn small green" id="simFinal">🏆 Simulate to Final</button>
+      <button class="btn small" id="simRound">${t("sim_round")}</button>
+      <button class="btn small green" id="simFinal">${t("sim_final")}</button>
     </div>
     ${k.champion?championBanner(k):""}
     <div class="bracket" id="bracket"></div>`;
@@ -809,27 +957,27 @@ function renderKnockout(){
     round.forEach(tie=>col.appendChild(tieCard(tie,roundName(ri,total)))); wrap.appendChild(col);
   });
   if(k.thirdPlace){
-    const col=el("div","round"); col.appendChild(el("div","round-title","3rd Place"));
-    col.appendChild(tieCard(k.thirdPlace,"3rd Place Playoff")); wrap.appendChild(col);
+    const col=el("div","round"); col.appendChild(el("div","round-title",t("third_place")));
+    col.appendChild(tieCard(k.thirdPlace,t("third_playoff"))); wrap.appendChild(col);
   }
   $("#simRound").onclick=simulateCurrentRound;
   $("#simFinal").onclick=simulateToFinal;
 }
 function tieCard(tie,stage){
   const card=el("div","tie");
-  if(!tie.home||!tie.away){ card.classList.add("tbd"); card.innerHTML=`<div class="row"><span class="nm" style="color:var(--muted)">To be decided…</span></div>`; return card; }
+  if(!tie.home||!tie.away){ card.classList.add("tbd"); card.innerHTML=`<div class="row"><span class="nm" style="color:var(--muted)">${t("tbd")}</span></div>`; return card; }
   const played=tie.played, so=tie.result&&tie.result.shootout, dec=tie.result&&tie.result.decidedBy;
   const mkRow=(name,goals,pen,side)=>`<div class="row ${played&&tie.winner===name?"win":played?"lose":""}">
-      <img src="${flag(code(name))}"><span class="nm" data-team="${name}">${favMark(name)}${name}</span>
+      <img src="${flag(code(name))}"><span class="nm" data-team="${name}">${label(name)}</span>
       <span class="g">${played?goals:""}</span>${pen!=null?`<span class="pen">(${pen})</span>`:""}</div>`;
   card.innerHTML =
      mkRow(tie.home, played?tie.result.gh:"", so?so.sh:null) +
      mkRow(tie.away, played?tie.result.ga:"", so?so.sa:null) +
-     (played && dec && dec!=="normal" ? `<div class="note">${dec==="pens"?"after penalties":"after extra time"}</div>` : "");
+     (played && dec && dec!=="normal" ? `<div class="note">${dec==="pens"?t("after_pens"):t("after_et")}</div>` : "");
   if(!played){
     const btns=el("div","tbtns");
-    const play=el("button","btn small green","▶ Play");
-    const quick=el("button","btn small ghost","Quick");
+    const play=el("button","btn small green",t("play"));
+    const quick=el("button","btn small ghost",t("quick"));
     play.onclick=()=>playMatchOverlay({home:tie.home,away:tie.away,stage,knockout:true,
       onFinish:(res,counted)=>{ recordKnockout(tie,res); recordStats(tie.home,tie.away,res.gh,res.ga,counted); afterKnockout(); }});
     quick.onclick=()=>{ const p=playFull(tie.home,tie.away,true); recordKnockout(tie,p.result); recordStats(tie.home,tie.away,p.result.gh,p.result.ga,p.counted); afterKnockout(); };
@@ -867,15 +1015,15 @@ function championBanner(k){
   const favWon=state.favTeam===k.champion;
   return `<section class="card champ">
     <div class="trophy">🏆</div>
-    <div class="tag">World Champions 2026</div>
-    <img src="${flag(c.code)}" alt="${k.champion}">
-    <div class="name">${k.champion}</div>
-    ${favWon?`<div class="favwin">⭐ YOUR TEAM ARE WORLD CHAMPIONS! ⭐</div>`:""}
-    <p style="color:var(--muted);margin-top:10px">🥈 Runners-up: <b style="color:var(--ink)">${runnerUp}</b>
-      ${third?` &nbsp;•&nbsp; 🥉 Third: <b style="color:var(--ink)">${third}</b>`:""}</p>
+    <div class="tag">${t("champions_2026")}</div>
+    <img src="${flag(c.code)}" alt="${teamName(k.champion)}">
+    <div class="name">${teamName(k.champion)}</div>
+    ${favWon?`<div class="favwin">${t("your_champ")}</div>`:""}
+    <p style="color:var(--muted);margin-top:10px">${t("runners_up")} <b style="color:var(--ink)">${teamName(runnerUp)}</b>
+      ${third?` &nbsp;•&nbsp; ${t("third_lbl")} <b style="color:var(--ink)">${teamName(third)}</b>`:""}</p>
     <div class="cta" style="margin-top:18px">
-      <button class="btn green" id="playAgain">🔁 New tournament</button>
-      <button class="btn ghost" id="seeStats">📊 See stats</button>
+      <button class="btn green" id="playAgain">${t("play_again")}</button>
+      <button class="btn ghost" id="seeStats">${t("see_stats")}</button>
     </div>
   </section>`;
 }
@@ -890,24 +1038,24 @@ function renderStats(){
   const avg=st.matches?(st.goals/st.matches).toFixed(2):"0";
   const bw=st.biggestWin, mg=st.mostGoals;
   app().innerHTML=`
-    <div class="toolbar"><h2 style="font-size:1.2rem">Tournament Stats</h2></div>
+    <div class="toolbar"><h2 style="font-size:1.2rem">${t("stats_title")}</h2></div>
     <div class="tiles">
-      <div class="card tile"><b>${st.matches}</b><span>Matches played</span></div>
-      <div class="card tile"><b>${st.goals}</b><span>Total goals</span></div>
-      <div class="card tile"><b>${avg}</b><span>Goals / match</span></div>
-      <div class="card tile"><b>${bw?bw.diff:"-"}</b><span>Biggest win</span>${bw?`<small>${bw.winner} ${bw.gf}-${bw.ga} ${bw.loser}</small>`:""}</div>
-      <div class="card tile"><b>${mg?mg.total:"-"}</b><span>Most goals</span>${mg?`<small>${mg.home} ${mg.gh}-${mg.ga} ${mg.away}</small>`:""}</div>
-      <div class="card tile"><b>🧤</b><span>Golden Glove</span>${glove?`<small>${glove.name} (${glove.GA} in ${glove.P})</small>`:`<small>—</small>`}</div>
+      <div class="card tile"><b>${st.matches}</b><span>${t("st_matches")}</span></div>
+      <div class="card tile"><b>${st.goals}</b><span>${t("st_total_goals")}</span></div>
+      <div class="card tile"><b>${avg}</b><span>${t("st_gpm")}</span></div>
+      <div class="card tile"><b>${bw?bw.diff:"-"}</b><span>${t("st_biggest")}</span>${bw?`<small>${teamName(bw.winner)} ${bw.gf}-${bw.ga} ${teamName(bw.loser)}</small>`:""}</div>
+      <div class="card tile"><b>${mg?mg.total:"-"}</b><span>${t("st_most")}</span>${mg?`<small>${teamName(mg.home)} ${mg.gh}-${mg.ga} ${teamName(mg.away)}</small>`:""}</div>
+      <div class="card tile"><b>🧤</b><span>${t("st_glove")}</span>${glove?`<small>${t("glove_val",{name:teamName(glove.name),ga:glove.GA,p:glove.P})}</small>`:`<small>—</small>`}</div>
     </div>
     <section class="card pad">
-      <h3 style="margin-bottom:12px">👑 Golden Boot race — top scorers</h3>
-      ${scorers.length? `<table><thead><tr><th>#</th><th style="text-align:left">Player</th><th style="text-align:left">Team</th><th>Goals</th></tr></thead>
+      <h3 style="margin-bottom:12px">${t("boot_title")}</h3>
+      ${scorers.length? `<table><thead><tr><th>${t("th_pos")}</th><th style="text-align:left">${t("th_player")}</th><th style="text-align:left">${t("th_team")}</th><th>${t("th_goals")}</th></tr></thead>
       <tbody>${scorers.map((s,i)=>`<tr>
         <td class="pts">${i+1}</td>
         <td class="team" style="cursor:default">${s.name}</td>
-        <td class="team" data-team="${s.team}"><img src="${flag(code(s.team))}">${s.team}</td>
+        <td class="team" data-team="${s.team}"><img src="${flag(code(s.team))}">${teamName(s.team)}</td>
         <td class="pts">${s.goals}</td></tr>`).join("")}</tbody></table>`
-      : `<p style="color:var(--muted)">No goals yet — play some matches!</p>`}
+      : `<p style="color:var(--muted)">${t("no_goals")}</p>`}
     </section>`;
 }
 
@@ -915,19 +1063,6 @@ function renderStats(){
    10. LIVE MATCH OVERLAY (90' + extra time + penalties + commentary)
 --------------------------------------------------------------------------- */
 let liveTimer=null;
-const COMMENTARY_GOAL=[
-  "GOAL! {s} smashes it home for {t}! 🚀",
-  "It's in! {s} scores for {t}! 🎉",
-  "What a finish from {s}! {t} go wild!",
-  "{s} makes no mistake — goal for {t}!",
-  "Brilliant strike by {s}! {t} are buzzing!",
-  "The net bulges! {s} scores for {t}!",
-];
-const COMMENTARY_FILLER=[
-  "End to end stuff here!","The crowd is on its feet!","Great tempo in this match.",
-  "So close — off the post!","The keeper stands tall!","A chance goes begging!",
-  "What an atmosphere in the stadium!","Both teams pushing forward!",
-];
 function speedMs(){return state.speed==="slow"?90:state.speed==="normal"?45:22;}
 function setCommentary(txt){ const c=$("#comm"); if(!c)return; c.textContent=txt; c.classList.remove("show"); void c.offsetWidth; c.classList.add("show"); }
 
@@ -937,26 +1072,26 @@ function playMatchOverlay(opts){
   const favSide = state.favTeam===home?"home":state.favTeam===away?"away":null;
   const ov=$("#overlay"), box=$("#match");
   ov.classList.add("show");
-  const tag=(name)=> state.favTeam===name?`<div class="favtag">⭐ Your team</div>`:"";
+  const tag=(name)=> state.favTeam===name?`<div class="favtag">${t("fav_tag")}</div>`:"";
   box.innerHTML=`
     <div class="pitch">
       <div class="stage-label">${stage}</div>
       <div class="scoreboard">
-        <div class="side-big"><img src="${flag(code(home))}"><div class="nm">${home}</div><div class="rk">OVR ${overall(Q(home))}</div>${tag(home)}</div>
+        <div class="side-big"><img src="${flag(code(home))}"><div class="nm">${teamName(home)}</div><div class="rk">${t("ovr")} ${overall(Q(home))}</div>${tag(home)}</div>
         <div class="score"><span id="sh">0</span><span style="opacity:.5">-</span><span id="sa">0</span></div>
-        <div class="side-big"><img src="${flag(code(away))}"><div class="nm">${away}</div><div class="rk">OVR ${overall(Q(away))}</div>${tag(away)}</div>
+        <div class="side-big"><img src="${flag(code(away))}"><div class="nm">${teamName(away)}</div><div class="rk">${t("ovr")} ${overall(Q(away))}</div>${tag(away)}</div>
       </div>
-      <div class="commentary" id="comm">Kick-off!</div>
+      <div class="commentary" id="comm">${t("kickoff")}</div>
       <div class="clock"><span class="time" id="clock">0'</span><div class="bar"><i id="prog"></i></div></div>
     </div>
-    <ul class="feed" id="feed"><li style="border:none;color:var(--muted)">🟢 Kick-off! ${home} vs ${away}</li></ul>
+    <ul class="feed" id="feed"><li style="border:none;color:var(--muted)">${t("kickoff_feed",{h:teamName(home),a:teamName(away)})}</li></ul>
     <div class="controls">
       <div class="seg" id="speedSeg">
-        <button data-sp="slow">Slow</button><button data-sp="normal">Normal</button><button data-sp="fast">Fast</button>
+        <button data-sp="slow">${t("slow")}</button><button data-sp="normal">${t("normal")}</button><button data-sp="fast">${t("fast")}</button>
       </div>
       <button class="btn small ghost" id="soundBtn">${state.soundOn?"🔊":"🔇"}</button>
       <div class="spacer"></div>
-      <button class="btn small" id="skipBtn">⏭ Skip to result</button>
+      <button class="btn small" id="skipBtn">${t("skip")}</button>
     </div>`;
   const feedEl=$("#feed");
   $$("#speedSeg button").forEach(b=>{ b.classList.toggle("on",b.dataset.sp===state.speed);
@@ -973,18 +1108,18 @@ function playMatchOverlay(opts){
     $("#sh").textContent=gh; $("#sa").textContent=ga;
     const scEl = ev.side==="home"?$("#sh"):$("#sa");
     scEl.classList.remove("flash"); void scEl.offsetWidth; scEl.classList.add("flash");
-    const li=el("li"); li.innerHTML=`<span class="m">${ev.minute}'</span><span class="goalicon">⚽</span><span class="who">${ev.scorer} <small>(${ev.team})</small></span>`;
+    const li=el("li"); li.innerHTML=`<span class="m">${ev.minute}'</span><span class="goalicon">⚽</span><span class="who">${ev.scorer} <small>(${teamName(ev.team)})</small></span>`;
     feedEl.appendChild(li); feedEl.scrollTop=feedEl.scrollHeight;
     if(!silent){
-      setCommentary(pick(COMMENTARY_GOAL).replace("{s}",ev.scorer).replace("{t}",ev.team));
+      setCommentary(pick(L().commGoal).split("{s}").join(ev.scorer).split("{t}").join(teamName(ev.team)));
       if(state.soundOn) beep(ev.side==="home"?520:440,.14);
       burstConfetti(ev.team===state.favTeam?420:160);
     }
   }
   function updateClock(){ $("#clock").textContent=minute+"'"; $("#prog").style.width=(Math.min(minute,endMinute)/endMinute*100)+"%"; }
   function enterET(){ inET=true; decidedBy="aet"; endMinute=120;
-    feedEl.appendChild(el("li","",`<span class="pen-head">— ${gh}-${ga} after 90' — Extra time! —</span>`));
-    setCommentary("Level after 90 minutes — we go to extra time!"); }
+    feedEl.appendChild(el("li","",`<span class="pen-head">${t("et_break",{gh,ga})}</span>`));
+    setCommentary(t("et_comm")); }
 
   function finalize(){
     if(finished) return; finished=true;
@@ -992,20 +1127,20 @@ function playMatchOverlay(opts){
     const result={gh,ga};
     if(knockout){
       if(gh===ga){ const so=shootout(home,away); result.shootout=so; decidedBy="pens";
-        feedEl.appendChild(el("li","",`<span class="pen-head">— Penalty shootout! —</span>`));
+        feedEl.appendChild(el("li","",`<span class="pen-head">${t("pens_head")}</span>`));
         so.kicks.forEach(k=>{ const li=el("li");
-          li.innerHTML=`<span class="m">PK</span><span class="who">${k.team} ${k.scored?"⚽ Scored":"❌ Missed"}</span><small style="color:var(--muted);margin-left:auto">${k.sd?"sudden death":"kick "+k.i}</small>`;
+          li.innerHTML=`<span class="m">PK</span><span class="who">${teamName(k.team)} ${k.scored?t("pk_scored"):t("pk_missed")}</span><small style="color:var(--muted);margin-left:auto">${k.sd?t("sudden"):t("kick",{i:k.i})}</small>`;
           feedEl.appendChild(li); });
-        feedEl.appendChild(el("li","",`<span class="pen-head">${so.winner} win ${so.sh}-${so.sa} on penalties! 🎉</span>`));
+        feedEl.appendChild(el("li","",`<span class="pen-head">${t("pens_win",{w:teamName(so.winner),sh:so.sh,sa:so.sa})}</span>`));
         feedEl.scrollTop=feedEl.scrollHeight;
-        setCommentary(`${so.winner} win it on penalties! 🎉`);
+        setCommentary(t("pens_comm",{w:teamName(so.winner)}));
       }
       result.decidedBy=decidedBy;
     }
-    $("#clock").textContent = decidedBy==="pens"?"PENS":decidedBy==="aet"?"AET":"FT";
+    $("#clock").textContent = decidedBy==="pens"?t("pens_s"):decidedBy==="aet"?t("aet_s"):t("ft");
     $("#prog").style.width="100%";
     const counted = inET ? sim.events.concat(sim.etEvents) : sim.events;
-    const skip=$("#skipBtn"); skip.textContent="✓ Continue"; skip.className="btn small green";
+    const skip=$("#skipBtn"); skip.textContent=t("cont"); skip.className="btn small green";
     skip.onclick=()=>{ ov.classList.remove("show"); onFinish(result,counted); };
     burstConfetti(900);
   }
@@ -1014,7 +1149,7 @@ function playMatchOverlay(opts){
     const bucket = minute<=90?evByMin[minute]:etByMin[minute];
     let scored=false;
     (bucket||[]).forEach(ev=>{ revealGoal(ev,false); scored=true; });
-    if(!scored && rand()<0.06) setCommentary(pick(COMMENTARY_FILLER));
+    if(!scored && rand()<0.06) setCommentary(pick(L().commFiller));
     if(minute===90 && !(knockout && gh===ga)) return finalize();
     if(minute===90 && knockout && gh===ga) return enterET();
     if(minute>=endMinute) return finalize();
@@ -1078,6 +1213,7 @@ function confLoop(){
    12. EVENTS + BOOT
 --------------------------------------------------------------------------- */
 $$("#tabs .tab").forEach(b=>b.onclick=()=>{ if(!b.disabled) setScreen(b.dataset.screen); });
+$$("#langsw button").forEach(b=>b.onclick=()=>setLang(b.dataset.lang));
 /* delegated: click any team name/card to open its detail */
 $("#app").addEventListener("click",e=>{
   const t=e.target.closest("[data-team]"); if(!t) return;

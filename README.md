@@ -45,6 +45,9 @@ simply the repo name, which is why the repo must be named `worldcup`.
 - **🏆 Champion** — trophy, confetti, and the medal table.
 
 ## Features
+- **Two languages** — English and **European Portuguese**, switchable any time via the
+  **EN / PT** toggle in the header (country names, UI, commentary, and round names are all
+  translated). Your choice is remembered.
 - **Team editor** — the **Teams** tab lists every team; tap one to see its squad and three
   quality sliders (**Attack / Midfield / Defense**) that combine into an **Overall** rating.
   Move the sliders to make a team stronger or weaker — it really changes their chances (a
