@@ -109,7 +109,14 @@
   .thirds td.pos{color:var(--gold);font-weight:900}
 
   /* Bracket */
-  .bracket{display:flex;gap:26px;overflow-x:auto;padding:8px 2px 20px}
+  .zoom-controls{display:flex;gap:6px;align-items:center;background:rgba(0,0,0,.25);border:1px solid var(--line);border-radius:12px;padding:5px}
+  .zoom-controls button{width:34px;height:34px;border:none;border-radius:8px;background:rgba(255,255,255,.08);color:var(--ink);font-weight:900;font-size:1.15rem;display:flex;align-items:center;justify-content:center;line-height:1}
+  .zoom-controls button:active{background:rgba(255,255,255,.2)}
+  .zoom-controls .zlabel{min-width:42px;text-align:center;font-weight:800;font-size:.8rem;color:var(--muted)}
+  .zoom-controls .fitbtn{width:auto;padding:0 10px;font-size:.8rem;font-weight:800}
+  .bracket-zoom-wrap{overflow:auto;touch-action:none;-webkit-overflow-scrolling:touch;border-radius:12px;position:relative;cursor:grab;max-height:75vh}
+  .bracket-zoom-wrap.grabbing{cursor:grabbing}
+  .bracket{display:flex;gap:26px;padding:8px 2px 20px;width:max-content;transform-origin:0 0}
   .round{display:flex;flex-direction:column;justify-content:space-around;gap:14px;min-width:220px}
   .round-title{text-align:center;color:var(--gold);font-weight:900;letter-spacing:1px;text-transform:uppercase;font-size:.78rem;margin-bottom:6px}
   .tie{background:rgba(0,0,0,.22);border:1px solid var(--line);border-radius:12px;padding:8px;display:flex;flex-direction:column;gap:5px}
@@ -371,6 +378,7 @@ const I18N = {
     thirds_title:"🥉 Third-placed teams — best 8 advance",
     th_pos:"#", th_grp:"Grp", th_status:"Status", qualified:"✅ Qualified", eliminated:"❌ Out",
     knockout_stage:"Knockout Stage", sim_round:"⚡ Simulate current round", sim_final:"🏆 Simulate to Final",
+    zoom_in:"Zoom in", zoom_out:"Zoom out", zoom_fit:"⤢ Fit",
     third_place:"3rd Place", third_playoff:"3rd Place Playoff", tbd:"To be decided…",
     after_pens:"after penalties", after_et:"after extra time",
     champions_2026:"World Champions 2026", your_champ:"⭐ YOUR TEAM ARE WORLD CHAMPIONS! ⭐",
@@ -423,6 +431,7 @@ const I18N = {
     thirds_title:"🥉 Terceiros classificados — os 8 melhores apuram-se",
     th_pos:"#", th_grp:"Grp", th_status:"Estado", qualified:"✅ Apurado", eliminated:"❌ Fora",
     knockout_stage:"Fase Eliminatória", sim_round:"⚡ Simular ronda atual", sim_final:"🏆 Simular até à Final",
+    zoom_in:"Aumentar zoom", zoom_out:"Diminuir zoom", zoom_fit:"⤢ Ajustar",
     third_place:"3.º Lugar", third_playoff:"Disputa do 3.º Lugar", tbd:"A definir…",
     after_pens:"após penáltis", after_et:"após prolongamento",
     champions_2026:"Campeões do Mundo 2026", your_champ:"⭐ A TUA SELEÇÃO É CAMPEÃ DO MUNDO! ⭐",
@@ -946,11 +955,17 @@ function renderKnockout(){
     <div class="toolbar">
       <h2 style="font-size:1.2rem">${t("knockout_stage")}</h2>
       <div class="spacer"></div>
+      <div class="zoom-controls">
+        <button id="zoomOut" aria-label="${t("zoom_out")}" title="${t("zoom_out")}">−</button>
+        <span class="zlabel" id="zoomLabel">100%</span>
+        <button id="zoomIn" aria-label="${t("zoom_in")}" title="${t("zoom_in")}">+</button>
+        <button class="fitbtn" id="zoomFit" title="${t("zoom_fit")}">${t("zoom_fit")}</button>
+      </div>
       <button class="btn small" id="simRound">${t("sim_round")}</button>
       <button class="btn small green" id="simFinal">${t("sim_final")}</button>
     </div>
     ${k.champion?championBanner(k):""}
-    <div class="bracket" id="bracket"></div>`;
+    <div class="bracket-zoom-wrap" id="bracketWrap"><div class="bracket" id="bracket"></div></div>`;
   const wrap=$("#bracket");
   k.rounds.forEach((round,ri)=>{
     const col=el("div","round"); col.appendChild(el("div","round-title",roundName(ri,total)));
@@ -962,6 +977,11 @@ function renderKnockout(){
   }
   $("#simRound").onclick=simulateCurrentRound;
   $("#simFinal").onclick=simulateToFinal;
+  $("#zoomIn").onclick=()=>zoomBracketBy(ZOOM_STEP);
+  $("#zoomOut").onclick=()=>zoomBracketBy(-ZOOM_STEP);
+  $("#zoomFit").onclick=fitBracketToScreen;
+  if(bracketZoom==null) fitBracketToScreen(); else applyBracketZoom();
+  setupBracketGestures();
 }
 function tieCard(tie,stage){
   const card=el("div","tie");
@@ -1026,6 +1046,84 @@ function championBanner(k){
       <button class="btn ghost" id="seeStats">${t("see_stats")}</button>
     </div>
   </section>`;
+}
+
+/* ----- Bracket zoom/pan (mobile pinch, buttons, wheel, drag) ----- */
+let bracketZoom = null;
+const ZOOM_MIN=0.35, ZOOM_MAX=2.2, ZOOM_STEP=0.2;
+function applyBracketZoom(){
+  const b=$("#bracket"); if(!b) return;
+  b.style.transform=`scale(${bracketZoom})`;
+  const lbl=$("#zoomLabel"); if(lbl) lbl.textContent=Math.round(bracketZoom*100)+"%";
+}
+function setBracketZoom(z,cx,cy){
+  const wrap=$("#bracketWrap"); if(!wrap) return;
+  const oldZoom=bracketZoom||1;
+  const newZoom=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,z));
+  if(cx!=null && cy!=null){
+    const rect=wrap.getBoundingClientRect();
+    const px=(wrap.scrollLeft+cx-rect.left)/oldZoom;
+    const py=(wrap.scrollTop+cy-rect.top)/oldZoom;
+    bracketZoom=newZoom; applyBracketZoom();
+    wrap.scrollLeft=px*newZoom-(cx-rect.left);
+    wrap.scrollTop=py*newZoom-(cy-rect.top);
+  } else {
+    bracketZoom=newZoom; applyBracketZoom();
+  }
+}
+function zoomBracketBy(delta){
+  const wrap=$("#bracketWrap"); if(!wrap) return;
+  const rect=wrap.getBoundingClientRect();
+  setBracketZoom((bracketZoom||1)+delta, rect.left+rect.width/2, rect.top+rect.height/2);
+}
+function fitBracketToScreen(){
+  const wrap=$("#bracketWrap"), b=$("#bracket"); if(!wrap||!b) return;
+  b.style.transform="scale(1)";
+  const naturalW=b.scrollWidth;
+  const availW=wrap.clientWidth-4;
+  const fit=naturalW>0 ? Math.min(1,availW/naturalW) : 1;
+  bracketZoom=Math.max(ZOOM_MIN,fit);
+  applyBracketZoom();
+  wrap.scrollLeft=0; wrap.scrollTop=0;
+}
+function touchDist(t){return Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);}
+function touchMid(t){return {x:(t[0].clientX+t[1].clientX)/2,y:(t[0].clientY+t[1].clientY)/2};}
+function setupBracketGestures(){
+  const wrap=$("#bracketWrap"); if(!wrap) return;
+  let pinchDist=null, pinchStartZoom=1, panStart=null;
+  wrap.addEventListener("touchstart",e=>{
+    if(e.touches.length===2){ pinchDist=touchDist(e.touches); pinchStartZoom=bracketZoom||1; panStart=null; }
+    else if(e.touches.length===1){ panStart={x:e.touches[0].clientX+wrap.scrollLeft,y:e.touches[0].clientY+wrap.scrollTop}; }
+  },{passive:true});
+  wrap.addEventListener("touchmove",e=>{
+    if(e.touches.length===2 && pinchDist){
+      e.preventDefault();
+      const d=touchDist(e.touches), mid=touchMid(e.touches);
+      setBracketZoom(pinchStartZoom*(d/pinchDist), mid.x, mid.y);
+    } else if(e.touches.length===1 && panStart){
+      e.preventDefault();
+      wrap.scrollLeft=panStart.x-e.touches[0].clientX;
+      wrap.scrollTop=panStart.y-e.touches[0].clientY;
+    }
+  },{passive:false});
+  wrap.addEventListener("touchend",e=>{
+    if(e.touches.length<2) pinchDist=null;
+    if(e.touches.length===0) panStart=null;
+  });
+  wrap.addEventListener("wheel",e=>{
+    if(!(e.ctrlKey||e.metaKey)) return;
+    e.preventDefault();
+    setBracketZoom((bracketZoom||1)*(1-e.deltaY*0.01), e.clientX, e.clientY);
+  },{passive:false});
+  wrap.addEventListener("mousedown",e=>{
+    if(e.button!==0) return;
+    wrap.classList.add("grabbing");
+    const start={x:e.clientX+wrap.scrollLeft,y:e.clientY+wrap.scrollTop};
+    const onMove=e2=>{ wrap.scrollLeft=start.x-e2.clientX; wrap.scrollTop=start.y-e2.clientY; };
+    const onUp=()=>{ wrap.classList.remove("grabbing"); document.removeEventListener("mousemove",onMove); document.removeEventListener("mouseup",onUp); };
+    document.addEventListener("mousemove",onMove);
+    document.addEventListener("mouseup",onUp);
+  });
 }
 
 /* ----- Stats ----- */
