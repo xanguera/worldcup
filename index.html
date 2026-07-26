@@ -305,12 +305,12 @@ const TEAMS = [
 ];
 const GENERIC = ["Silva","García","Kovač","Traoré","Nguyen","Johansson","Rossi","Novak","Popov","Ahmed"];
 
-/* team style tilts (attack/mid/def) for flavour; normalized to keep Overall≈rating */
+/* team style tilts (attack/mid/def/goalkeeping) for flavour; normalized to keep Overall≈rating */
 const STYLE = {
-  "Brazil":{a:7,d:-4}, "Argentina":{a:3,m:2,d:1}, "France":{a:4,d:2}, "Spain":{m:7,a:1,d:-2},
-  "England":{a:3,d:2}, "Germany":{m:4,a:1}, "Portugal":{a:5,d:-2}, "Netherlands":{a:3,m:1},
-  "Belgium":{a:5,d:-4}, "Italy":{d:8,a:-4}, "Croatia":{m:8,a:-2,d:-2}, "Uruguay":{d:5,a:-1},
-  "Morocco":{d:6,a:-4}, "Norway":{a:8,d:-7}, "Denmark":{m:3,d:2}, "Japan":{m:4,a:-1},
+  "Brazil":{a:7,d:-4,g:-2}, "Argentina":{a:3,m:2,d:1,g:7}, "France":{a:4,d:2,g:4}, "Spain":{m:7,a:1,d:-2},
+  "England":{a:3,d:2,g:2}, "Germany":{m:4,a:1,g:5}, "Portugal":{a:5,d:-2}, "Netherlands":{a:3,m:1},
+  "Belgium":{a:5,d:-4,g:6}, "Italy":{d:8,a:-4,g:6}, "Croatia":{m:8,a:-2,d:-2,g:5}, "Uruguay":{d:5,a:-1},
+  "Morocco":{d:6,a:-4,g:6}, "Norway":{a:8,d:-7}, "Denmark":{m:3,d:2}, "Japan":{m:4,a:-1},
   "USA":{a:2}, "Nigeria":{a:5,d:-4}, "Senegal":{d:4,a:1}, "Poland":{a:4,d:-4},
   "Egypt":{a:4,d:-2}, "Serbia":{a:5,d:-5}, "Colombia":{a:3,d:-2}, "Mexico":{a:2,m:1},
 };
@@ -365,9 +365,10 @@ const I18N = {
     confirm_new:"Start a new tournament? Current progress will be lost (your team edits are kept).",
     teams_title:"Teams", search_ph:"Search team…",
     teams_sub:"Tap a team to see its squad and tweak its qualities. Stronger qualities = better chances!",
+    reset_all:"↺ Reset all teams", confirm_reset_all:"Reset ALL teams to their default ratings? Any custom tweaks will be lost.",
     back_teams:"← Teams", fav_yes:"⭐ Your team", fav_set:"☆ Set as my team", reset_ratings:"↺ Reset ratings",
     detail_sub:"World Cup 2026 · squad &amp; ratings", overall:"OVERALL",
-    attack:"Attack ⚔️", midfield:"Midfield 🎯", defense:"Defense 🛡️",
+    attack:"Attack ⚔️", midfield:"Midfield 🎯", defense:"Defense 🛡️", goalkeeping:"Goalkeeping 🧤",
     slider_note:"Move the sliders to make {team} stronger or weaker. Changes affect matches from now on.",
     squad:"👕 Squad", tourn_stats:"📊 Tournament stats",
     st_played:"Played", st_wdl:"W-D-L", st_goals_fa:"Goals for:against", st_top:"Top scorer",
@@ -418,9 +419,10 @@ const I18N = {
     confirm_new:"Começar um novo torneio? O progresso atual será perdido (as tuas edições de seleções são mantidas).",
     teams_title:"Seleções", search_ph:"Procurar seleção…",
     teams_sub:"Toca numa seleção para veres o plantel e ajustares as suas qualidades. Melhores qualidades = melhores hipóteses!",
+    reset_all:"↺ Repor todas as seleções", confirm_reset_all:"Repor TODAS as seleções para os valores padrão? As alterações personalizadas serão perdidas.",
     back_teams:"← Seleções", fav_yes:"⭐ A tua seleção", fav_set:"☆ Definir como a minha", reset_ratings:"↺ Repor valores",
     detail_sub:"Mundial 2026 · plantel e valores", overall:"GERAL",
-    attack:"Ataque ⚔️", midfield:"Meio-campo 🎯", defense:"Defesa 🛡️",
+    attack:"Ataque ⚔️", midfield:"Meio-campo 🎯", defense:"Defesa 🛡️", goalkeeping:"Defesa de Baliza 🧤",
     slider_note:"Move os cursores para tornar {team} mais forte ou mais fraca. As alterações afetam os jogos a partir de agora.",
     squad:"👕 Plantel", tourn_stats:"📊 Estatísticas do torneio",
     st_played:"Jogos", st_wdl:"V-E-D", st_goals_fa:"Golos marc.:sofr.", st_top:"Melhor marcador",
@@ -471,19 +473,20 @@ function label(name){ return favMark(name)+teamName(name); }
 function setLang(lang){ state.lang=lang; save(); render(); }
 
 /* ---------------------------------------------------------------------------
-   3. QUALITIES  (attack / midfield / defense -> overall)
+   3. QUALITIES  (attack / midfield / defense / goalkeeping -> overall)
 --------------------------------------------------------------------------- */
-const QW = {a:0.42, m:0.23, d:0.35};                            // overall weights
+const QW = {a:0.35, m:0.20, d:0.30, g:0.15};                    // overall weights
 const clampQ = v=>Math.max(35,Math.min(99,Math.round(v)));
-function ovRaw(a,m,d){return QW.a*a+QW.m*m+QW.d*d;}
-function overall(q){return Math.round(ovRaw(q.attack,q.midfield,q.defense));}
+function ovRaw(a,m,d,g){return QW.a*a+QW.m*m+QW.d*d+QW.g*g;}
+function overall(q){return Math.round(ovRaw(q.attack,q.midfield,q.defense,q.goalkeeping));}
 function baseQualities(t){
   const s=STYLE[t.name]||{};
   let a=t.rating+(s.a||0)+noise(t.name,1);
   let m=t.rating+(s.m||0)+noise(t.name,2);
   let d=t.rating+(s.d||0)+noise(t.name,3);
-  const delta=t.rating-ovRaw(a,m,d); a+=delta; m+=delta; d+=delta;   // normalize Overall≈rating
-  return {attack:clampQ(a),midfield:clampQ(m),defense:clampQ(d)};
+  let g=t.rating+(s.g||0)+noise(t.name,4);
+  const delta=t.rating-ovRaw(a,m,d,g); a+=delta; m+=delta; d+=delta; g+=delta;   // normalize Overall≈rating
+  return {attack:clampQ(a),midfield:clampQ(m),defense:clampQ(d),goalkeeping:clampQ(g)};
 }
 function Q(name){return state.qualities[name];}                 // current (editable) qualities
 
@@ -506,7 +509,10 @@ function load(){
     const s=JSON.parse(localStorage.getItem(SAVE_KEY));
     if(!s||!s.qualities||!s.stats) return null;
     // heal: ensure every team has qualities (data may have changed since save)
-    TEAMS.forEach(t=>{ if(!s.qualities[t.name]) s.qualities[t.name]=baseQualities(t); });
+    TEAMS.forEach(t=>{
+      if(!s.qualities[t.name]) s.qualities[t.name]=baseQualities(t);
+      else if(s.qualities[t.name].goalkeeping==null) s.qualities[t.name].goalkeeping=baseQualities(t).goalkeeping;
+    });
     if(!("favTeam" in s)) s.favTeam="";
     if(s.lang!=="pt" && s.lang!=="en") s.lang="en";
     return s;
@@ -544,7 +550,7 @@ function makeFixtures(teams){
    6. MATCH ENGINE (quality-based; attack vs defense)
 --------------------------------------------------------------------------- */
 const GOAL_BASE=1.32, KGOAL=0.019;
-function attDef(q){return {att:0.62*q.attack+0.38*q.midfield, def:0.62*q.defense+0.38*q.midfield};}
+function attDef(q){return {att:0.62*q.attack+0.38*q.midfield, def:0.5*q.defense+0.3*q.midfield+0.2*q.goalkeeping};}
 function xgOf(att,def){return Math.max(0.22,Math.min(3.3, GOAL_BASE*Math.exp(KGOAL*(att-def))));}
 function minuteLabel(m){ if(m===90 && rand()<0.5) return {label:"90+"+(1+randInt(4)),raw:90}; return {label:String(m),raw:m}; }
 function goalEvent(m,team,side){ const L=minuteLabel(m); return {minute:L.label,raw:L.raw,team,side,scorer:scorer(team)}; }
@@ -571,8 +577,9 @@ function simulateMatch(homeName,awayName){
 
 function shootout(homeName,awayName){
   const H=Q(homeName), A=Q(awayName);
-  const clamp=p=>Math.max(0.55,Math.min(0.9,p));
-  const pH=0.73+(overall(H)-overall(A))/600, pA=0.73+(overall(A)-overall(H))/600;
+  const clamp=p=>Math.max(0.5,Math.min(0.92,p));
+  // each kicker's success depends on their team's overall composure vs the opposing goalkeeper
+  const pH=0.78+(overall(H)-A.goalkeeping)/500, pA=0.78+(overall(A)-H.goalkeeping)/500;
   const kicks=[]; let sh=0,sa=0;
   for(let i=1;i<=5;i++){
     const okH=rand()<clamp(pH); if(okH)sh++; kicks.push({team:homeName,i,scored:okH});
@@ -766,9 +773,11 @@ function renderTeams(){
       <h2 style="font-size:1.2rem">${t("teams_title")}</h2>
       <div class="spacer"></div>
       <input class="searchbar" id="teamSearch" placeholder="${t("search_ph")}">
+      <button class="btn small ghost" id="resetAllBtn">${t("reset_all")}</button>
     </div>
     <p style="color:var(--muted);margin:-6px 0 14px">${t("teams_sub")}</p>
     <div class="team-grid" id="teamGrid"></div>`;
+  $("#resetAllBtn").onclick=()=>{ if(confirm(t("confirm_reset_all"))){ state.qualities=freshQualities(); save(); renderTeams(); } };
   const grid=$("#teamGrid");
   const paint=(filter="")=>{
     grid.innerHTML="";
@@ -819,6 +828,7 @@ function renderTeamDetail(){
         ${sliderRow("attack",t("attack"),q.attack)}
         ${sliderRow("midfield",t("midfield"),q.midfield)}
         ${sliderRow("defense",t("defense"),q.defense)}
+        ${sliderRow("goalkeeping",t("goalkeeping"),q.goalkeeping)}
       </div>
       <p style="color:var(--muted);font-size:.85rem;margin-top:12px">
         ${t("slider_note",{team:teamName(name)})}
@@ -845,7 +855,7 @@ function renderTeamDetail(){
   $("#backBtn").onclick=()=>setScreen("teams");
   $("#favBtn").onclick=()=>{ state.favTeam=isFav?"":name; save(); renderTeamDetail(); };
   $("#resetBtn").onclick=()=>{ state.qualities[name]=baseQualities(td); save(); renderTeamDetail(); };
-  ["attack","midfield","defense"].forEach(key=>{
+  ["attack","midfield","defense","goalkeeping"].forEach(key=>{
     const inp=$("#sl-"+key);
     inp.oninput=()=>{
       state.qualities[name][key]=parseInt(inp.value,10);
