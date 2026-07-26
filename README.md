@@ -48,10 +48,13 @@ simply the repo name, which is why the repo must be named `worldcup`.
 - **Two languages** — English and **European Portuguese**, switchable any time via the
   **EN / PT** toggle in the header (country names, UI, commentary, and round names are all
   translated). Your choice is remembered.
-- **Team editor** — the **Teams** tab lists every team; tap one to see its squad and three
-  quality sliders (**Attack / Midfield / Defense**) that combine into an **Overall** rating.
-  Move the sliders to make a team stronger or weaker — it really changes their chances (a
-  maxed-out minnow beats a nerfed favourite ~90% of the time). Edits persist.
+- **Team editor** — the **Teams** tab lists every team; tap one to see its squad and four
+  quality sliders (**Attack / Midfield / Defense / Goalkeeping**) that combine into an
+  **Overall** rating. Move the sliders to make a team stronger or weaker — it really changes
+  their chances (a maxed-out minnow beats a nerfed favourite ~90% of the time). Goalkeeping
+  also swings penalty shootouts. Edits persist. Each team has its own **↺ Reset ratings**
+  button, and the Teams tab has an **↺ Reset all teams** button to restore every team's
+  defaults at once.
 - **Live commentary** during Play matches, with occasional colour between the goals.
 - **Stats tab** — Golden Boot top-scorer race, Golden Glove, biggest win, most goals, goals
   per match, and per-team stats on each team's page.
@@ -59,16 +62,19 @@ simply the repo name, which is why the repo must be named `worldcup`.
   automatically; close the tab and pick up right where you left off.
 
 ## How results are decided
-Every team has **Attack / Midfield / Defense** ratings (derived from FIFA rankings plus a
-little style — Brazil attack-heavy, Italy defense-heavy, etc.). Each match's goals are
-simulated minute-by-minute: a team's chances come from **its attack vs the opponent's
-defense**, weighted but **deliberately compressed** so favourites win only ~60% of the time.
-Underdogs win often, so every team has a real shot (across many simulations, 40+ different
-teams end up champions).
+Every team has **Attack / Midfield / Defense / Goalkeeping** ratings (derived from FIFA
+rankings plus a little style — Brazil attack-heavy, Italy defense-heavy, Argentina/Belgium/
+Morocco strong in goal, etc.). Each match's goals are simulated minute-by-minute: a team's
+chances come from **its attack vs the opponent's defense** (defense itself is a blend of
+Defense, Midfield and Goalkeeping), weighted but **deliberately compressed** so favourites win
+only ~60% of the time. Underdogs win often, so every team has a real shot (across many
+simulations, 40+ different teams end up champions). In a penalty shootout, each kicker's
+success chance is their team's Overall rating vs the **opposing goalkeeper's Goalkeeping**
+rating — a great keeper really can win a shootout.
 
 ## Notes
 - Player names shown as scorers are well-known real players used for flavour; they're
   illustrative, not official 2026 squad lists.
 - Tune the overall feel by editing constants near the top of the script in `index.html`:
-  `GOAL_BASE`/`KGOAL` (how much ratings matter), and the `STYLE` map (per-team attack/defense
-  tilt). Kids can adjust individual teams live via the sliders — no code needed.
+  `GOAL_BASE`/`KGOAL` (how much ratings matter), and the `STYLE` map (per-team attack/defense/
+  goalkeeping tilt). Kids can adjust individual teams live via the sliders — no code needed.
