@@ -195,6 +195,29 @@
   .langsw{align-self:center}
   .langsw button{padding:8px 11px;font-size:.8rem}
 
+  /* Match report */
+  .report{padding:20px 18px}
+  .report-head{display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:16px}
+  .rh-team{flex:1;text-align:center;font-weight:800;font-size:.9rem;display:flex;flex-direction:column;align-items:center;gap:6px}
+  .rh-team img{height:38px;width:58px;object-fit:cover;border-radius:6px;border:2px solid rgba(255,255,255,.25)}
+  .rh-score{font-size:1.9rem;font-weight:900;text-align:center;min-width:90px}
+  .rh-tag{font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+  .motm-card{background:linear-gradient(135deg,rgba(255,210,74,.18),rgba(255,210,74,.03));border:1px solid rgba(255,210,74,.4);border-radius:14px;padding:12px 14px;margin-bottom:16px}
+  .motm-badge{color:var(--gold);font-weight:900;font-size:.7rem;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px}
+  .motm-body{display:flex;align-items:center;gap:12px}
+  .motm-body img{height:32px;width:48px;object-fit:cover;border-radius:6px;border:2px solid rgba(255,255,255,.25)}
+  .motm-name{font-weight:900;font-size:1.02rem}
+  .motm-sub{color:var(--muted);font-size:.78rem;font-weight:700}
+  .motm-rating{margin-left:auto;background:var(--gold);color:#06202f;font-weight:900;border-radius:10px;padding:6px 12px;font-size:1rem}
+  .report-stats{display:flex;flex-direction:column;gap:10px}
+  .stat-row{display:flex;align-items:center;gap:10px}
+  .stat-val{font-weight:900;min-width:24px;text-align:center;font-size:.85rem}
+  .stat-mid{flex:1}
+  .stat-label{text-align:center;color:var(--muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+  .stat-bar{display:flex;height:7px;border-radius:6px;overflow:hidden;background:rgba(255,255,255,.08)}
+  .stat-bar i{display:block;height:100%;background:var(--gold)}
+  .stat-bar i.a{background:rgba(255,255,255,.35)}
+
   /* Champion */
   .champ{text-align:center;padding:36px 20px}
   .trophy{font-size:5rem;filter:drop-shadow(0 8px 20px rgba(255,210,74,.5));animation:float 2.5s ease-in-out infinite}
@@ -390,6 +413,10 @@ const I18N = {
     th_player:"Player", th_goals:"Goals", no_goals:"No goals yet — play some matches!",
     ovr:"OVR", kickoff:"Kick-off!", kickoff_feed:"🟢 Kick-off! {h} vs {a}",
     slow:"Slow", normal:"Normal", fast:"Fast", skip:"⏭ Skip to result", cont:"✓ Continue",
+    view_report:"📊 View match report",
+    motm_title:"Man of the Match", st_possession:"Possession", st_shots:"Shots",
+    st_on_target:"On target", st_corners:"Corners", st_fouls:"Fouls",
+    st_yellow:"Yellow cards", st_red:"Red cards",
     ft:"FT", aet_s:"AET", pens_s:"PENS",
     et_break:"— {gh}-{ga} after 90' — Extra time! —", et_comm:"Level after 90 minutes — we go to extra time!",
     pens_head:"— Penalty shootout! —", pk_scored:"⚽ Scored", pk_missed:"❌ Missed",
@@ -444,6 +471,10 @@ const I18N = {
     th_player:"Jogador", th_goals:"Golos", no_goals:"Ainda sem golos — joga alguns jogos!",
     ovr:"GER", kickoff:"Pontapé de saída!", kickoff_feed:"🟢 Pontapé de saída! {h} vs {a}",
     slow:"Lento", normal:"Normal", fast:"Rápido", skip:"⏭ Saltar para o resultado", cont:"✓ Continuar",
+    view_report:"📊 Ver relatório do jogo",
+    motm_title:"Homem do Jogo", st_possession:"Posse de bola", st_shots:"Remates",
+    st_on_target:"Remates à baliza", st_corners:"Cantos", st_fouls:"Faltas",
+    st_yellow:"Cartões amarelos", st_red:"Cartões vermelhos",
     ft:"FIM", aet_s:"A.P.", pens_s:"PEN",
     et_break:"— {gh}-{ga} após 90' — Prolongamento! —", et_comm:"Empate após 90 minutos — vamos a prolongamento!",
     pens_head:"— Marcação de penáltis! —", pk_scored:"⚽ Marcou", pk_missed:"❌ Falhou",
@@ -592,6 +623,94 @@ function shootout(homeName,awayName){
     if(++sd>15){ if(rand()<0.5)sh++; else sa++; }
   }
   return {sh,sa,kicks,winner: sh>sa?homeName:awayName};
+}
+
+/* Post-match report: realistic-looking team stats + Man of the Match, generated from team qualities. */
+function generateMatchStats(homeName,awayName,gh,ga){
+  const H=Q(homeName), A=Q(awayName);
+  let possH=Math.round(50+(H.midfield-A.midfield)/3+(rand()*10-5));
+  possH=Math.max(32,Math.min(68,possH));
+  const shotsFor=(attack,goals)=>Math.max(goals+1, Math.round(attack/9+goals*1.8+rand()*4));
+  const shH=shotsFor(H.attack,gh), shA=shotsFor(A.attack,ga);
+  const sotFor=(shots,goals)=>Math.min(shots, goals+randInt(3)+1);
+  const corFor=(shots)=>Math.max(1,Math.round(shots/2.4+rand()*2));
+  const foulsFor=()=>6+randInt(8);
+  const foulsH=foulsFor(), foulsA=foulsFor();
+  const cardsFor=(fouls)=>({yellow:Math.min(3,Math.round(fouls/7*rand()*2)), red: rand()<0.04?1:0});
+  const cardsH=cardsFor(foulsH), cardsA=cardsFor(foulsA);
+  return {
+    possession:{home:possH,away:100-possH},
+    shots:{home:shH,away:shA},
+    onTarget:{home:sotFor(shH,gh),away:sotFor(shA,ga)},
+    corners:{home:corFor(shH),away:corFor(shA)},
+    fouls:{home:foulsH,away:foulsA},
+    yellow:{home:cardsH.yellow,away:cardsA.yellow},
+    red:{home:cardsH.red,away:cardsA.red},
+  };
+}
+function pickMotm(homeName,awayName,gh,ga,goalEvents,winner){
+  const tallies={};
+  (goalEvents||[]).forEach(ev=>{ const k=ev.team+"|"+ev.scorer; tallies[k]=(tallies[k]||0)+1; });
+  const candidates=Object.keys(tallies).map(k=>{
+    const [team,player]=k.split("|"); const goals=tallies[k];
+    let score=6.9+goals*1.05+rand()*0.6;
+    if(team===winner) score+=0.3;
+    return {team,player,goals,score};
+  });
+  [homeName,awayName].forEach(team=>{
+    const star=players(team)[0], key=team+"|"+star;
+    if(!tallies[key]){
+      let score=6.1+(overall(Q(team))-70)/40+rand()*0.7;
+      if(team===winner) score+=0.3;
+      if((team===homeName&&ga===0)||(team===awayName&&gh===0)) score+=0.5;
+      candidates.push({team,player:star,goals:0,score});
+    }
+  });
+  candidates.sort((a,b)=>b.score-a.score);
+  const top=candidates[0];
+  top.score=Math.max(6.0,Math.min(9.9,top.score));
+  return top;
+}
+function matchWinner(homeName,awayName,gh,ga,so){
+  if(gh>ga) return homeName; if(ga>gh) return awayName; return so?so.winner:null;
+}
+function statBar(labelText,hVal,aVal,isPct){
+  const hPct = isPct?hVal:Math.round(hVal/((hVal+aVal)||1)*100);
+  return `<div class="stat-row">
+    <span class="stat-val">${hVal}${isPct?"%":""}</span>
+    <div class="stat-mid"><div class="stat-label">${labelText}</div>
+      <div class="stat-bar"><i style="width:${hPct}%"></i><i class="a" style="width:${100-hPct}%"></i></div>
+    </div>
+    <span class="stat-val">${aVal}${isPct?"%":""}</span>
+  </div>`;
+}
+function matchReportHTML(homeName,awayName,gh,ga,decidedBy,so,stats,mvp){
+  const tag = decidedBy==="pens"?t("after_pens"):decidedBy==="aet"?t("after_et"):"";
+  return `<div class="report">
+    <div class="report-head">
+      <div class="rh-team"><img src="${flag(code(homeName))}"><span>${teamName(homeName)}</span></div>
+      <div class="rh-score">${gh} - ${ga}${so?`<div class="rh-tag">(${so.sh}-${so.sa} ${t("pens_s")})</div>`:tag?`<div class="rh-tag">${tag}</div>`:""}</div>
+      <div class="rh-team"><img src="${flag(code(awayName))}"><span>${teamName(awayName)}</span></div>
+    </div>
+    <div class="motm-card">
+      <div class="motm-badge">⭐ ${t("motm_title")}</div>
+      <div class="motm-body">
+        <img src="${flag(code(mvp.team))}">
+        <div><div class="motm-name">${mvp.player}</div><div class="motm-sub">${teamName(mvp.team)}${mvp.goals?` · ⚽ ×${mvp.goals}`:""}</div></div>
+        <div class="motm-rating">${mvp.score.toFixed(1)}</div>
+      </div>
+    </div>
+    <div class="report-stats">
+      ${statBar(t("st_possession"),stats.possession.home,stats.possession.away,true)}
+      ${statBar(t("st_shots"),stats.shots.home,stats.shots.away)}
+      ${statBar(t("st_on_target"),stats.onTarget.home,stats.onTarget.away)}
+      ${statBar(t("st_corners"),stats.corners.home,stats.corners.away)}
+      ${statBar(t("st_fouls"),stats.fouls.home,stats.fouls.away)}
+      ${statBar(t("st_yellow"),stats.yellow.home,stats.yellow.away)}
+      ${(stats.red.home||stats.red.away)?statBar(t("st_red"),stats.red.home,stats.red.away):""}
+    </div>
+    <button class="btn green" id="reportContinue" style="width:100%;margin-top:16px">${t("cont")}</button>
+  </div>`;
 }
 
 /* Play a full match for a context; returns final result + the goal events that counted. */
@@ -1248,9 +1367,16 @@ function playMatchOverlay(opts){
     $("#clock").textContent = decidedBy==="pens"?t("pens_s"):decidedBy==="aet"?t("aet_s"):t("ft");
     $("#prog").style.width="100%";
     const counted = inET ? sim.events.concat(sim.etEvents) : sim.events;
-    const skip=$("#skipBtn"); skip.textContent=t("cont"); skip.className="btn small green";
-    skip.onclick=()=>{ ov.classList.remove("show"); onFinish(result,counted); };
+    const skip=$("#skipBtn"); skip.textContent=t("view_report"); skip.className="btn small green";
+    skip.onclick=()=>showReport(result,counted);
     burstConfetti(900);
+  }
+  function showReport(result,counted){
+    const winner=matchWinner(home,away,result.gh,result.ga,result.shootout);
+    const stats=generateMatchStats(home,away,result.gh,result.ga);
+    const mvp=pickMotm(home,away,result.gh,result.ga,counted,winner);
+    box.innerHTML=matchReportHTML(home,away,result.gh,result.ga,result.decidedBy,result.shootout,stats,mvp);
+    $("#reportContinue").onclick=()=>{ ov.classList.remove("show"); onFinish(result,counted); };
   }
   function step(){
     minute++; updateClock();
